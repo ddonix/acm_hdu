@@ -1,75 +1,95 @@
 #include<iostream>
 #include<cstdio>
 #include<cmath>
+#include<ctime>
 
 using namespace std;
 
 int n = -1;
-int **mat = 0;
+int mat[16][16];
 
-int *list_task = 0;
-int *list_man = 0;
+unsigned short task_bitmap = 0x0;
+unsigned short bitmap[16] = {	0x1,0x2,0x4,0x8,
+				0x10,0x20,0x40,0x80,
+				0x100,0x200,0x400,0x800,
+				0x1000,0x2000,0x4000,0x8000};
+
+int min_temp[16];
+
+struct record
+{
+	unsigned short t;
+	struct record *next;
+};
+
+struct record **pr_head = 0;
+struct record **pr_tail = 0;
+int *pr_min;
 
 int input()
 {
 	scanf("%d", &n);
-	mat = new int* [n];
-	list_man = new int [n];
-	list_task = new int [n];
 	for(int i=0; i < n; i++)
-	{
-		list_task[i] = list_man[i] = -1;
-		mat[i] = new int[n];
 		for (int j = 0; j < n; j++)
 			scanf("%d", &mat[i][j]);
+	for(int i=0; i < n; i++)
+	{
+		pr_head = new struct record*[n-3];
+		pr_tail = new struct record*[n-3];
+		pr_min = new int [n-3];
+		for(int i =0; i < n-3; i++)
+		{
+			pr_head[i] = 0;
+			pr_tail[i] = 0;
+			pr_min[i] = 150000;
+		}
 	}
 }
 
-int play(int ok)
+int res_min = 1000000;
+void play(int ok, int cur_v)
 {	
-	int res,ri,temp;
-	if (ok != n-1)
-	{	
-		res = 15000;
-		ri = -1;
-		for(int i = 0; i < n; i++)
-		{
-			if (list_task[i] != -1)
-			{
-				list_man[ok] = i;
-				list_task[i] = ok;
-				temp = mat[ok][i]+play(ok+1);
-				list_man[ok] = -1;
-				list_task[i] = -1;
-				if (temp < res)
-				{
-					res = temp;
-					ri = i;
-				}
-			}
-		}
-		return res;
-	}
-	else
+	struct record *re;
+	if (ok == n)
 	{
-		for (int i = 0; i < n; i++)
+		if (cur_v < res_min)
+			res_min = cur_v;
+		return;
+	}
+	for(int i = 0; i < n; i++)
+	{
+		if (!(task_bitmap & bitmap[i]) && (cur_v+mat[ok][i] < res_min))
 		{
-			if (list_task[i] != -1)
+			if (ok > 0)
 			{
-				return mat[n-1][i];
+				re = pr_head[ok-1];
+				while(re)
+				{
+					if (re->t == task_bitmap | bitmap[i])
+					{
+						if(cur_v+mat[ok][i] < pr_min)
+						{
+							task_bitmap |= bitmap[i];
+							play(ok+1, cur_v+mat[ok][i]);
+							task_bitmap &= ~bitmap[i];
+						}
+					}
+				}
+				if (re)
+			}
+			else
+			{
+			
 			}
 		}
 	}
-	
 }
 
 int main(int argc, char **argv)
 {
 	int res;
 	input();
-	res = play(0);
-	printf("%d", res);
+	play(0,0);
+	printf("%d\n", res_min);
 	return 0;
 }
-
-
